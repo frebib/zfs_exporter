@@ -1,0 +1,54 @@
+---
+kind: pipeline
+name: default
+
+steps:
+- name: build
+  pull: always
+  image: spritsail/docker-build
+  settings:
+    repo: zfs-exporter
+
+- name: test
+  pull: always
+  image: spritsail/docker-test
+  settings:
+    curl: :9134
+    repo: zfs-exporter
+    delay: 1
+
+- name: publish
+  pull: always
+  image: spritsail/docker-publish
+  settings:
+    from: zfs-exporter
+    repo: frebib/zfs-exporter
+  environment:
+    DOCKER_PASSWORD:
+      from_secret: docker_password
+    DOCKER_USERNAME:
+      from_secret: docker_username
+  when:
+    branch:
+    - drone
+    event:
+    - push
+
+- name: notify
+  pull: always
+  image: spritsail/notify
+  environment:
+    NOTIFY_TOKEN:
+      from_secret: notify_token
+    WEBHOOK_URL:
+      from_secret: webhook_url
+  when:
+    status:
+    - success
+    - failure
+
+---
+kind: signature
+hmac: 29f1898dd776f2786be31b1428be2b3498bdd45a53e8b54308f003bfe8aa64c9
+
+...
